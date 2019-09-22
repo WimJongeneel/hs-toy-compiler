@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 module Runtime.RunExpression where
 
 import Control.Monad.State
@@ -13,52 +15,42 @@ type Memory = [Map.Map String Value]
 emptyMemory :: Memory
 emptyMemory = [Map.empty]
 
+runNumericBinaryExpression :: (Expression -> State Memory Value)
+  -> Expression
+  -> (Int -> Int -> Int)
+  -> Expression
+  -> State Memory Value
+runNumericBinaryExpression run left opp rigth = do
+  v1 <- run left
+  r1 <- run rigth
+  let v = case (v1, r1) of 
+           (VInt il, VInt ir) -> il `opp` ir
+           _                  -> error "invalid opperator"
+  return $ VInt v
+
 runExpression :: Expression -> State Memory Value
-runExpression (EInt i) = state $ \m -> (VInt i, m)
-
-runExpression (EPlus l r) = do
-  valL <- runExpression l
-  valR <- runExpression r
-  let newVal = (case (valL, valR) of (VInt il, VInt ir) -> il + ir)
-  return $ VInt newVal
-
-runExpression (EMinus l r) = do
-  valL <- runExpression l
-  valR <- runExpression r
-  let newVal =(case (valL, valR) of  (VInt il, VInt ir) -> il - ir)
-  return $ VInt newVal
-
-runExpression (ETimes l r) = do
-  valL <- runExpression l
-  valR <- runExpression r
-  let newVal = (case (valL, valR) of (VInt il, VInt ir) -> il * ir)
-  return $ VInt newVal
-
-runExpression (EDivide l r) = do
-  valL <- runExpression l
-  valR <- runExpression r
-  let newVal = (case (valL, valR) of (VInt il, VInt ir) -> il `div` ir)
-  return $ VInt newVal
-
-runExpression (ENested e) = runExpression e
-
+runExpression (EInt i)        = state (VInt i,)
+runExpression (EPlus l r)     = runNumericBinaryExpression runExpression l (+) r
+runExpression (EMinus l r)    = runNumericBinaryExpression runExpression l (-) r
+runExpression (ETimes l r)    = runNumericBinaryExpression runExpression l (*) r
+runExpression (EDivide l r)   = runNumericBinaryExpression runExpression l div r
+runExpression (ENested e)     = runExpression e
 runExpression (EAssign id' e) = do
   m <- get
   value <- runExpression e
   let scope = head m
   put [Map.insert id' value scope]
   return VUnit
-
-runExpression (ERead id') = do
-  m <- get 
+runExpression (ERead id')     = do
+  m <- get
   case Map.lookup id' $ head m of
     Just v    -> return v
     Nothing   -> return VUnit
 
 runProgram :: AST -> State Memory Value
-runProgram [] = state $ \m -> (VUnit, emptyMemory)
-runProgram [e] = runExpression e
-runProgram (e:ast) = state $ \m0 -> let 
+runProgram []      = state (VUnit,)
+runProgram [e]     = runExpression e
+runProgram (e:ast) = state $ \m0 -> let
                                       s = runExpression e
                                       (_, m1) = runState s m0
                                       s1 = runProgram ast
