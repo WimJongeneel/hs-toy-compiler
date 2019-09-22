@@ -17,28 +17,24 @@ runExpression :: Expression -> State Memory Value
 runExpression (EInt i) = state $ \m -> (VInt i, m)
 
 runExpression (EPlus l r) = do
-  m <- get
   valL <- runExpression l
   valR <- runExpression r
   let newVal = (case (valL, valR) of (VInt il, VInt ir) -> il + ir)
   return $ VInt newVal
 
 runExpression (EMinus l r) = do
-  m    <- get
   valL <- runExpression l
   valR <- runExpression r
   let newVal =(case (valL, valR) of  (VInt il, VInt ir) -> il - ir)
   return $ VInt newVal
 
 runExpression (ETimes l r) = do
-  m    <- get
   valL <- runExpression l
   valR <- runExpression r
   let newVal = (case (valL, valR) of (VInt il, VInt ir) -> il * ir)
   return $ VInt newVal
 
 runExpression (EDivide l r) = do
-  m    <- get
   valL <- runExpression l
   valR <- runExpression r
   let newVal = (case (valL, valR) of (VInt il, VInt ir) -> il `div` ir)
