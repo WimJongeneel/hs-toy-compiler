@@ -10,9 +10,11 @@ astToString ast = show $ fmap show ast
 
 main ::IO ()
 main = do
-  let tokens = alexScanTokens "1+1"
+  let tokens = alexScanTokens "let x = 1 x + 1"
   print tokens
   let ast = parse tokens
   print $ astToString ast
-  let r = fmap run ast
-  print $ show r
+  let r = execProgram ast
+  
+  print $ fst r
+  print $ snd r

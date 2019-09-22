@@ -35,7 +35,7 @@ Expression: Expression plus Expression        { EPlus $1 $3 }
   | Expression times Expression               { ETimes $1 $3 }
   | Expression divide Expression              { EDivide $1 $3 }
   | lp Expression rp                          { ENested $2 }
-  | let id eq Expression                      { EAssign "hi" $4}
+  | let id eq Expression                      { EAssign $2 $4}
   | int                                       { EInt $1 }
   | id                                        { ERead $1 }
 
