@@ -1,3 +1,10 @@
-# hs-math-interpreter
+# Haskell Toy Compiler
 
-Just learning Haskell and the ecosystem around it.
+Made in Haskell with Alex and Happy.
+
+## Example code
+```
+let x = 2
+let y = 3 * x
+y
+```
