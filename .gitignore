@@ -1,0 +1,11 @@
+Lexer/*
+
+!Lexer/Lexer.x
+!Lexer/Tokens.hs
+
+build/
+
+Parser/*
+
+!Parser/AST.hs
+!Parser/Parser.y
