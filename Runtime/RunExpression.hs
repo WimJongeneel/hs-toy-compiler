@@ -41,6 +41,7 @@ runBoolBinaryExpression run left opp rigth = do
 
 runExpression :: Expression -> State Memory Value
 runExpression (EInt i)        = state (VInt i,)
+runExpression (EBool b)       = state (VBool b,)
 runExpression (EPlus l r)     = runNumericBinaryExpression runExpression l (+) r
 runExpression (EMinus l r)    = runNumericBinaryExpression runExpression l (-) r
 runExpression (ETimes l r)    = runNumericBinaryExpression runExpression l (*) r
