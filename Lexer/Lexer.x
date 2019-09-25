@@ -13,6 +13,13 @@ $alpha = [a-zA-Z]
 
 tokens :-
   $white+                             ;
+  "true"                              { (\s -> TTrue) }
+  "false"                             { (\s -> TFalse) }
+  "if"                                { (\s -> If) }
+  "then"                              { (\s -> Then) }
+  "else"                              { (\s -> Else) }
+  "=="                                { (\s -> Compare) }
+  "<>"                                { (\s -> CompareNot ) }
   "*"                                 { (\s -> Times) }
   "+"                                 { (\s -> Plus) }
   "-"                                 { (\s -> Minus) }

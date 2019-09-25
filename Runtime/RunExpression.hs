@@ -8,6 +8,7 @@ import qualified Data.Map as Map
 
 data Value = VInt Int
   | VUnit
+  | VBool Bool
   deriving (Eq, Show)
 
 type Memory = [Map.Map String Value]
@@ -24,9 +25,19 @@ runNumericBinaryExpression run left opp rigth = do
   v1 <- run left
   r1 <- run rigth
   let v = case (v1, r1) of 
-           (VInt il, VInt ir) -> il `opp` ir
-           _                  -> error "invalid opperator"
+           (VInt il, VInt ir)     -> il `opp` ir
+           _                      -> error "invalid opperator"
   return $ VInt v
+
+runBoolBinaryExpression :: (Expression -> State Memory Value)
+  -> Expression
+  -> (Value -> Value -> Bool)
+  -> Expression
+  -> State Memory Value
+runBoolBinaryExpression run left opp rigth = do
+  l1 <- run left
+  r1 <- run rigth
+  return $ VBool $ l1 `opp` r1
 
 runExpression :: Expression -> State Memory Value
 runExpression (EInt i)        = state (VInt i,)
@@ -46,6 +57,18 @@ runExpression (ERead id')     = do
   case Map.lookup id' $ head m of
     Just v    -> return v
     Nothing   -> return VUnit
+runExpression (EIf c e)       = do
+  c' <- runExpression c
+  case c' of
+    VBool b    -> if b then runExpression e else return VUnit
+    _          -> return VUnit
+runExpression (EIfElse c e1 e2) = do
+  c' <- runExpression c
+  case c' of
+    VBool b   -> runExpression $ if b then e1 else e2
+    _         -> runExpression e2
+runExpression (ECompare l r) = runBoolBinaryExpression runExpression l (==) r
+runExpression (ECompareNot l r) = runBoolBinaryExpression runExpression l (/=) r
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)

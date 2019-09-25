@@ -10,7 +10,8 @@ astToString ast = show $ fmap show ast
 
 main ::IO ()
 main = do
-  let tokens = alexScanTokens "let x = 1 x + 1"
+  let stdIn = "if 1 == 2 then 2 else 3"
+  let tokens = alexScanTokens stdIn
   print tokens
   let ast = parse tokens
   print $ astToString ast

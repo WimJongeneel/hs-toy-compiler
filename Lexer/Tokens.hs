@@ -10,4 +10,11 @@ data Token = Times
   | Let
   | Equals
   | Id String
+  | If
+  | Else
+  | Then
+  | Compare
+  | CompareNot
+  | TTrue 
+  | TFalse
   deriving (Eq, Show)

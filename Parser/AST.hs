@@ -8,6 +8,11 @@ data Expression = EPlus Expression Expression
   | ENested Expression
   | EAssign String Expression
   | ERead String
+  | EIf Expression Expression
+  | EIfElse Expression Expression Expression
+  | ECompare Expression Expression
+  | ECompareNot Expression Expression
+  | EBool Bool
   deriving (Eq, Show)
 
 type AST = [Expression]
