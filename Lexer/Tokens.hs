@@ -17,4 +17,7 @@ data Token = Times
   | CompareNot
   | TTrue 
   | TFalse
+  | TLSB
+  | TRSB
+  | Divider
   deriving (Eq, Show)

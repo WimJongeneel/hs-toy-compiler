@@ -13,6 +13,7 @@ data Expression = EPlus Expression Expression
   | ECompare Expression Expression
   | ECompareNot Expression Expression
   | EBool Bool
+  | EArrayInit [Expression]
   deriving (Eq, Show)
 
 type AST = [Expression]

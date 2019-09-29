@@ -27,19 +27,23 @@ comp      { Compare }
 compNot   { CompareNot }
 true      { TTrue }
 false     { TFalse }
+lsb       { TLSB }
+rsb       { TRSB }
+divider   { Divider }
 
 %right eq comp compNot
-%left plus minus
+%left plus minus 
 %left times divide
-%right if then else
+%right if then else divider
 
 %%
  
-AST : Expression AST      { $1:$2 }
-    | {- empty -}         { [ ] }
+AST : Expression AST                                        { $1:$2 }
+    | {- empty -}                                           { [ ] }
 
 Expression: if Expression then Expression else Expression   { EIfElse $2 $4 $6 }
   | if Expression then Expression                           { EIf $2 $4 }
+  | lsb ExpressionList rsb                                  { EArrayInit $2 }
   | Expression comp Expression                              { ECompare $1 $3 }
   | Expression compNot Expression                           { ECompareNot $1 $3 }
   | Expression plus Expression                              { EPlus $1 $3 }
@@ -52,6 +56,9 @@ Expression: if Expression then Expression else Expression   { EIfElse $2 $4 $6 }
   | false                                                   { EBool False }
   | int                                                     { EInt $1 }
   | id                                                      { ERead $1 }
+
+ExpressionList: Expression divider ExpressionList           { $1:$3 }
+  | Expression                                              { [$1] }
 
 {
 happyError :: [Token] -> a

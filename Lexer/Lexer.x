@@ -13,6 +13,9 @@ $alpha = [a-zA-Z]
 
 tokens :-
   $white+                             ;
+  ";"                                 { (\s -> Divider) }
+  "["                                 { (\s -> TLSB )}
+  "]"                                 { (\s -> TRSB )}
   "true"                              { (\s -> TTrue) }
   "false"                             { (\s -> TFalse) }
   "if"                                { (\s -> If) }

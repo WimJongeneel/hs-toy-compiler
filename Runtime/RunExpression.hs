@@ -9,12 +9,23 @@ import qualified Data.Map as Map
 data Value = VInt Int
   | VUnit
   | VBool Bool
+  | VPointer Int
   deriving (Eq, Show)
 
-type Memory = [Map.Map String Value]
+data HeapValue = HArray [Value]
+  | HObject [Map.Map String Value]
+  deriving (Eq, Show)
+
+data Memory = Memory { stack :: Map.Map String Value
+  , heap :: Map.Map Int HeapValue
+} deriving Show
 
 emptyMemory :: Memory
-emptyMemory = [Map.empty]
+emptyMemory = Memory Map.empty Map.empty
+
+after :: [State a b]  -> [b] -> State a [b]
+after [s1] res      = state $ \s -> let (b, s') = runState s1 s in (res ++ [b], s')
+after (sm:coll) res = state $ \s -> let (b, s') = runState sm s in runState (after coll $ res ++ [b]) s'
 
 runNumericBinaryExpression :: (Expression -> State Memory Value)
   -> Expression
@@ -48,14 +59,13 @@ runExpression (ETimes l r)    = runNumericBinaryExpression runExpression l (*) r
 runExpression (EDivide l r)   = runNumericBinaryExpression runExpression l div r
 runExpression (ENested e)     = runExpression e
 runExpression (EAssign id' e) = do
-  m <- get
   value <- runExpression e
-  let scope = head m
-  put [Map.insert id' value scope]
+  m <- get
+  put $ Memory (Map.insert id' value $ stack m) (heap m)
   return VUnit
 runExpression (ERead id')     = do
   m <- get
-  case Map.lookup id' $ head m of
+  case Map.lookup id' $ stack m of
     Just v    -> return v
     Nothing   -> return VUnit
 runExpression (EIf c e)       = do
@@ -70,6 +80,15 @@ runExpression (EIfElse c e1 e2) = do
     _         -> runExpression e2
 runExpression (ECompare l r) = runBoolBinaryExpression runExpression l (==) r
 runExpression (ECompareNot l r) = runBoolBinaryExpression runExpression l (/=) r
+runExpression (EArrayInit a)    = do
+  vals <- after (fmap runExpression a) []
+  m <- get
+  let nk = let ks = Map.keys $ heap m in case ks of [] -> 0 
+                                                    _  -> maximum $ Map.keys (heap m)
+  let heap' = Map.insert (nk + 1) (HArray vals) (heap m)
+  let m' = Memory (stack m) heap'
+  put m'
+  return $ VPointer $ nk + 1
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)
