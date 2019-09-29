@@ -20,4 +20,5 @@ data Token = Times
   | TLSB
   | TRSB
   | Divider
+  | Dot
   deriving (Eq, Show)

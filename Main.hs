@@ -13,7 +13,8 @@ main = do
   let stdIn = "let x = [1; 2] \
               \ let y = x y \
               \ let y = 1 \
-              \ let z = [true;false;true]"
+              \ let z = [true;false;true] \
+              \ z.[1 + 1]"
 
   let tokens = alexScanTokens stdIn
   print tokens

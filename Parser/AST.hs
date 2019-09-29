@@ -14,6 +14,7 @@ data Expression = EPlus Expression Expression
   | ECompareNot Expression Expression
   | EBool Bool
   | EArrayInit [Expression]
+  | EIndex Expression Expression
   deriving (Eq, Show)
 
 type AST = [Expression]

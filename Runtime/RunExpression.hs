@@ -89,6 +89,18 @@ runExpression (EArrayInit a)    = do
   let m' = Memory (stack m) heap'
   put m'
   return $ VPointer $ nk + 1
+runExpression (EIndex e i) = do
+  val <- runExpression e
+  index <- runExpression i
+  m <- get
+  case (val, index) of
+    (VPointer p, VInt i) -> let cv = Map.lookup i $ heap m 
+                            in case cv of 
+                               Just (HArray a) -> return $ a !! i
+                               _               -> error "invalid index expression"  
+    _                    -> error "invalid index expression"
+
+
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)

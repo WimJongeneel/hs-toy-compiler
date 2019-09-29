@@ -30,8 +30,9 @@ false     { TFalse }
 lsb       { TLSB }
 rsb       { TRSB }
 divider   { Divider }
+dot       { Dot }
 
-%right eq comp compNot
+%right eq comp compNot dot
 %left plus minus 
 %left times divide
 %right if then else divider
@@ -44,6 +45,7 @@ AST : Expression AST                                        { $1:$2 }
 Expression: if Expression then Expression else Expression   { EIfElse $2 $4 $6 }
   | if Expression then Expression                           { EIf $2 $4 }
   | lsb ExpressionList rsb                                  { EArrayInit $2 }
+  | Expression dot lsb Expression rsb                       { EIndex $1 $4 }
   | Expression comp Expression                              { ECompare $1 $3 }
   | Expression compNot Expression                           { ECompareNot $1 $3 }
   | Expression plus Expression                              { EPlus $1 $3 }
