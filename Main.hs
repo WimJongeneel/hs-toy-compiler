@@ -10,11 +10,10 @@ astToString ast = show $ fmap show ast
 
 main ::IO ()
 main = do
-  let stdIn = "let x = [1; 2] \
-              \ let y = x y \
-              \ let y = 1 \
-              \ let z = [true;false;true] \
-              \ z.[1 + 1]"
+  let stdIn = "let x = [1; 2]; y = 1; z = [true;false;true] \
+               \ z.[1 + 1]"
+
+  -- let stdIn = "let x = 1"
 
   let tokens = alexScanTokens stdIn
   print tokens

@@ -57,11 +57,14 @@ runExpression (EPlus l r)     = runNumericBinaryExpression runExpression l (+) r
 runExpression (EMinus l r)    = runNumericBinaryExpression runExpression l (-) r
 runExpression (ETimes l r)    = runNumericBinaryExpression runExpression l (*) r
 runExpression (EDivide l r)   = runNumericBinaryExpression runExpression l div r
-runExpression (ENested e)     = runExpression e
-runExpression (EAssign id' e) = do
-  value <- runExpression e
-  m <- get
-  put $ Memory (Map.insert id' value $ stack m) (heap m)
+runExpression (ENested e) = runExpression e
+runExpression (EAssign exprs) = do
+  let inserts = fmap (\e -> do 
+                            v <- runExpression $ snd e
+                            m <- get
+                            put $ Memory (Map.insert (fst e) v $ stack m) (heap m)
+                            return VUnit) exprs
+  r <- (after inserts [])
   return VUnit
 runExpression (ERead id')     = do
   m <- get

@@ -31,11 +31,12 @@ lsb       { TLSB }
 rsb       { TRSB }
 divider   { Divider }
 dot       { Dot }
+in        { In }
 
 %right eq comp compNot dot
-%left plus minus 
+%left plus minus
 %left times divide
-%right if then else divider
+%right if then else divider in
 
 %%
  
@@ -53,7 +54,8 @@ Expression: if Expression then Expression else Expression   { EIfElse $2 $4 $6 }
   | Expression times Expression                             { ETimes $1 $3 }
   | Expression divide Expression                            { EDivide $1 $3 }
   | lp Expression rp                                        { ENested $2 }
-  | let id eq Expression                                    { EAssign $2 $4}
+  | let LetDeclarations in Expression                       { ELetIn $2 $4 }
+  | let LetDeclarations                                     { EAssign $2 }
   | true                                                    { EBool True }
   | false                                                   { EBool False }
   | int                                                     { EInt $1 }
@@ -62,6 +64,8 @@ Expression: if Expression then Expression else Expression   { EIfElse $2 $4 $6 }
 ExpressionList: Expression divider ExpressionList           { $1:$3 }
   | Expression                                              { [$1] }
 
+LetDeclarations: id eq Expression divider LetDeclarations   { ($1, $3):$5 }
+  | id eq Expression                                        { [($1, $3)] }
 {
 happyError :: [Token] -> a
 happyError i = error $ show i

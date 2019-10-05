@@ -13,6 +13,7 @@ $alpha = [a-zA-Z]
 
 tokens :-
   $white+                             ;
+  "in"                                { (\s -> In) }
   "."                                 { (\s -> Dot) }
   ";"                                 { (\s -> Divider) }
   "["                                 { (\s -> TLSB )}

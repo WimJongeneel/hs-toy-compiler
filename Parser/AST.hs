@@ -6,7 +6,7 @@ data Expression = EPlus Expression Expression
   | EDivide Expression Expression
   | EInt Int
   | ENested Expression
-  | EAssign String Expression
+  | EAssign [(String, Expression)]
   | ERead String
   | EIf Expression Expression
   | EIfElse Expression Expression Expression
@@ -15,6 +15,7 @@ data Expression = EPlus Expression Expression
   | EBool Bool
   | EArrayInit [Expression]
   | EIndex Expression Expression
+  | ELetIn [(String, Expression)] Expression
   deriving (Eq, Show)
 
 type AST = [Expression]

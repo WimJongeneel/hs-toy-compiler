@@ -21,4 +21,5 @@ data Token = Times
   | TRSB
   | Divider
   | Dot
+  | In
   deriving (Eq, Show)
