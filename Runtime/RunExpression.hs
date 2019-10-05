@@ -103,9 +103,9 @@ runExpression (EIndex e i) = do
   index <- runExpression i
   m <- get
   case (val, index) of
-    (VPointer p, VInt i) -> let cv = Map.lookup i $ heap m 
+    (VPointer p, VInt i') -> let cv = Map.lookup p $ heap m 
                             in case cv of 
-                               Just (HArray a) -> return $ a !! i
+                               Just (HArray a) -> return $ a !! i'
                                _               -> error "invalid index expression"  
     _                    -> error "invalid index expression"
 runExpression (ELetIn defs e) = return VUnit
