@@ -14,7 +14,6 @@ main = do
                \ z.[1 + 1]"
 
   -- let stdIn = "let x = 1"
-
   let tokens = alexScanTokens stdIn
   print tokens
   let ast = parse tokens

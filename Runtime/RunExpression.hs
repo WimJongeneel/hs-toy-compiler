@@ -5,6 +5,7 @@ module Runtime.RunExpression where
 import Control.Monad.State
 import Parser.AST
 import qualified Data.Map as Map
+import Data.Maybe
 
 data Value = VInt Int
   | VUnit
@@ -16,16 +17,25 @@ data HeapValue = HArray [Value]
   | HObject [Map.Map String Value]
   deriving (Eq, Show)
 
-data Memory = Memory { stack :: Map.Map String Value
+data Memory = Memory { stack :: [Map.Map String Value]
   , heap :: Map.Map Int HeapValue
 } deriving Show
 
 emptyMemory :: Memory
-emptyMemory = Memory Map.empty Map.empty
+emptyMemory = Memory [Map.empty] Map.empty
+
+readVal :: String -> [Map.Map String Value] -> Value
+readVal id' (scope : mem) = fromMaybe (readVal id' mem) (Map.lookup id' scope)
+readVal _ []              = VUnit
+
+insertVal :: String -> Value -> [Map.Map String Value] -> [Map.Map String Value]
+insertVal id' val (scope:mem) = let scope' = Map.insert id' val scope in scope' : mem
+insertVal _ _ []              = error "no scopes in mem"
 
 after :: [State a b]  -> [b] -> State a [b]
 after [s1] res      = state $ \s -> let (b, s') = runState s1 s in (res ++ [b], s')
 after (sm:coll) res = state $ \s -> let (b, s') = runState sm s in runState (after coll $ res ++ [b]) s'
+after _ _           = error "no State monad provided for after"
 
 runNumericBinaryExpression :: (Expression -> State Memory Value)
   -> Expression
@@ -62,15 +72,11 @@ runExpression (EAssign exprs) = do
   let inserts = fmap (\e -> do 
                             v <- runExpression $ snd e
                             m <- get
-                            put $ Memory (Map.insert (fst e) v $ stack m) (heap m)
+                            put $ Memory (insertVal (fst e) v $ stack m) (heap m)
                             return VUnit) exprs
-  r <- (after inserts [])
+  _ <- (after inserts [])
   return VUnit
-runExpression (ERead id')     = do
-  m <- get
-  case Map.lookup id' $ stack m of
-    Just v    -> return v
-    Nothing   -> return VUnit
+runExpression (ERead id') = gets (readVal id' . stack)
 runExpression (EIf c e)       = do
   c' <- runExpression c
   case c' of
@@ -102,6 +108,7 @@ runExpression (EIndex e i) = do
                                Just (HArray a) -> return $ a !! i
                                _               -> error "invalid index expression"  
     _                    -> error "invalid index expression"
+runExpression (ELetIn defs e) = return VUnit
 
 
 
