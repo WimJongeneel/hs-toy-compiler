@@ -34,4 +34,4 @@ tokens :-
   "let"                               { (\s -> Let )}
   "="                                 { (\s -> Equals )}
   $digit+                             { (\s -> Int $ read s) }
-  $alpha                              { (\s -> Id $ show s) }
+  $alpha+                             { (\s -> Id $ show s) }
