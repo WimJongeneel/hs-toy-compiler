@@ -64,7 +64,7 @@ doInScope:: (Expression -> State Memory Value)
   -> Memory
   -> [(String, Expression)]
   -> Expression
-  -> Value
+  -> (Memory, Value)
 doInScope run initalM scope expr = 
   let inserts = fmap (\e -> do 
                             v <- runExpression $ snd e
@@ -73,9 +73,9 @@ doInScope run initalM scope expr =
                             return VUnit) scope;
       statements = inserts ++ [run expr];
       sm = after statements [];
-      (vs, _) = runState sm initalM;
+      (vs, m) = runState sm initalM;
   in
-      last vs
+      (Memory (stack initalM) (heap m), last vs)
 
 runExpression :: Expression -> State Memory Value
 runExpression (EInt i)        = state (VInt i,)
@@ -127,7 +127,9 @@ runExpression (EIndex e i) = do
     _                     -> error "invalid index expression"
 runExpression (ELetIn defs e) = do
   m <- get
-  return $ doInScope runExpression m defs e
+  let (m', v) = doInScope runExpression m defs e
+  put m'
+  return v
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)
