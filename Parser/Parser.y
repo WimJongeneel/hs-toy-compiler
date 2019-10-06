@@ -33,10 +33,10 @@ divider   { Divider }
 dot       { Dot }
 in        { In }
 
-%right eq comp compNot dot
+%right eq comp compNot dot in
 %left plus minus
 %left times divide
-%right if then else divider in
+%right if then else divider
 
 %%
  

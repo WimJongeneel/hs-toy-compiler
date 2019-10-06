@@ -47,7 +47,7 @@ runNumericBinaryExpression run left opp rigth = do
   r1 <- run rigth
   let v = case (v1, r1) of 
            (VInt il, VInt ir)     -> il `opp` ir
-           _                      -> error "invalid opperator"
+           _                      -> error $ "invalid opperator (" ++ show v1 ++ ") (" ++ show r1 ++ ")"
   return $ VInt v
 
 runBoolBinaryExpression :: (Expression -> State Memory Value)
@@ -59,6 +59,23 @@ runBoolBinaryExpression run left opp rigth = do
   l1 <- run left
   r1 <- run rigth
   return $ VBool $ l1 `opp` r1
+
+doInScope:: (Expression -> State Memory Value)
+  -> Memory
+  -> [(String, Expression)]
+  -> Expression
+  -> Value
+doInScope run initalM scope expr = 
+  let inserts = fmap (\e -> do 
+                            v <- runExpression $ snd e
+                            m <- get
+                            put $ Memory (insertVal (fst e) v $ stack m) (heap m)
+                            return VUnit) scope;
+      statements = inserts ++ [run expr];
+      sm = after statements [];
+      (vs, _) = runState sm initalM;
+  in
+      last vs
 
 runExpression :: Expression -> State Memory Value
 runExpression (EInt i)        = state (VInt i,)
@@ -104,13 +121,13 @@ runExpression (EIndex e i) = do
   m <- get
   case (val, index) of
     (VPointer p, VInt i') -> let cv = Map.lookup p $ heap m 
-                            in case cv of 
-                               Just (HArray a) -> return $ a !! i'
-                               _               -> error "invalid index expression"  
-    _                    -> error "invalid index expression"
-runExpression (ELetIn defs e) = return VUnit
-
-
+                             in case cv of 
+                                Just (HArray a) -> return $ a !! i'
+                                _               -> error "invalid index expression"  
+    _                     -> error "invalid index expression"
+runExpression (ELetIn defs e) = do
+  m <- get
+  return $ doInScope runExpression m defs e
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)
