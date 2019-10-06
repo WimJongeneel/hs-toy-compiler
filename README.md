@@ -21,3 +21,7 @@ let x = if 1 == 1 then 1 else 2
 ```hs
 let x = let y = 10; z = y * 2 in y + z
 ```
+
+## GC
+
+This language uses a `mark-and-sweep` based garbage collector. The GC will build a Set of heap adreses that are still reachable from the stack (both direct and indirect). All the heap entries that are not in this Set will be removed. GC calls are blocking.

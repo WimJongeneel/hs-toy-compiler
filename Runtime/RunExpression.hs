@@ -5,6 +5,9 @@ module Runtime.RunExpression where
 import Control.Monad.State
 import Parser.AST
 import qualified Data.Map as Map
+import qualified Data.Set as Set
+import Data.List
+
 import Data.Maybe
 
 data Value = VInt Int
@@ -35,7 +38,29 @@ insertVal _ _ []              = error "no scopes in mem"
 after :: [State a b]  -> [b] -> State a [b]
 after [s1] res      = state $ \s -> let (b, s') = runState s1 s in (res ++ [b], s')
 after (sm:coll) res = state $ \s -> let (b, s') = runState sm s in runState (after coll $ res ++ [b]) s'
-after _ _           = error "no State monad provided for after"
+after _ _           = state ([],)
+
+collectPointers :: [Value] -> Set.Set Int
+collectPointers vals = Set.fromList $ concatMap (\v -> case v of VPointer p -> [p] 
+                                                                 _          -> [ ]) vals
+
+collectStackPointers :: Memory -> Set.Set Int
+collectStackPointers mem = let st = concatMap (\s -> let l = Map.toList s in fmap snd l) (stack mem)
+                           in collectPointers st
+
+expandPointers :: Memory -> Set.Set Int -> Set.Set Int
+expandPointers mem ps = let hp = heap mem
+                            psL = Set.toList ps
+                            ps' = concatMap (\p -> case Map.lookup p hp of 
+                                                   Just (HArray a)    -> p : let _ps = collectPointers a in Set.toList $ expandPointers mem _ps
+                                                   _                  -> [p]) psL
+                        in Set.fromList ps'
+
+markUnreachableHeapEntries :: Memory -> Set.Set Int
+markUnreachableHeapEntries mem = let stackPointers = collectStackPointers mem
+                                     reachablePointers = expandPointers mem stackPointers
+                                     heapAdresses = Map.keys (heap mem) 
+                                 in Set.fromList $ heapAdresses \\ (Set.toList reachablePointers)
 
 runNumericBinaryExpression :: (Expression -> State Memory Value)
   -> Expression
