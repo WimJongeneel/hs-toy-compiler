@@ -18,7 +18,8 @@ data Value = VInt Int
   deriving (Eq, Show)
 
 data HeapValue = HArray [Value]
-  | HObject [Map.Map String Value]
+  -- | HObject [Map.Map String Value]
+  | HFunction { closure :: Map.Map String Value, param :: String, body :: Expression }
   deriving (Eq, Show)
 
 data Memory = Memory { stack :: [Map.Map String Value]
@@ -35,6 +36,11 @@ readVal _ []              = VUnit
 insertVal :: String -> Value -> [Map.Map String Value] -> [Map.Map String Value]
 insertVal id' val (scope:mem) = let scope' = Map.insert id' val scope in scope' : mem
 insertVal _ _ []              = error "no scopes in mem"
+
+nextHeapAdress :: Memory -> Int
+nextHeapAdress mem = let ks = Map.keys $ heap mem
+                     in case ks of [] -> 0 
+                                   _  -> (maximum $ Map.keys (heap mem)) + 1
 
 after :: [State a b]  -> [b] -> State a [b]
 after [s1] res      = state $ \s -> let (b, s') = runState s1 s in (res ++ [b], s')
@@ -143,12 +149,11 @@ runExpression (ECompareNot l r) = runBoolBinaryExpression runExpression l (/=) r
 runExpression (EArrayInit a)    = do
   vals <- after (fmap runExpression a) []
   m <- get
-  let nk = let ks = Map.keys $ heap m in case ks of [] -> 0 
-                                                    _  -> maximum $ Map.keys (heap m)
-  let heap' = Map.insert (nk + 1) (HArray vals) (heap m)
+  let nk = nextHeapAdress m
+  let heap' = Map.insert nk (HArray vals) (heap m)
   let m' = Memory (stack m) heap'
   put m'
-  return $ VPointer $ nk + 1
+  return $ VPointer nk
 runExpression (EIndex e i)      = do
   val <- runExpression e
   index <- runExpression i
@@ -168,6 +173,14 @@ runExpression EGCCollect        = do
   mem <- get 
   put $ gcCollect mem
   return VUnit
+runExpression (EFunction pn b)  = do
+  mem <- get
+  let nk = nextHeapAdress mem
+  let f = HFunction Map.empty pn b
+  let heap' = Map.insert nk f $ heap mem
+  put $ Memory (stack mem) heap'
+  return $ VPointer nk
+
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)

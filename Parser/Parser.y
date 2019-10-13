@@ -34,8 +34,8 @@ dot       { Dot }
 in        { In }
 arrow     { Arrow }
 
-%right eq comp compNot dot in
-%left plus minus arrow
+%right eq comp compNot dot in arrow
+%left plus minus 
 %left times divide
 %right if then else divider
 

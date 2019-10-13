@@ -21,7 +21,7 @@ main = do
 
   -- let stdIn = "let x = 1"
 
-  let stdIn = "xx -> yy -> 1 + 1"
+  let stdIn = "let f = xx -> yy -> 1 + 1"
   let tokens = alexScanTokens stdIn
   print tokens
   let ast = parse tokens
