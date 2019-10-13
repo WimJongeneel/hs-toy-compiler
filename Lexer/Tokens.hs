@@ -6,7 +6,7 @@ data Token = Times
   | Int Int
   | Divide
   | LeftParentheses
-  | RigthParentheses
+  | RightParentheses
   | Let
   | Equals
   | Id String

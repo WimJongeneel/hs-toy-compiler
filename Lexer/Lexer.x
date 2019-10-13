@@ -14,7 +14,7 @@ $alpha = [a-zA-Z]
 tokens :-
   $white+                             ;
   "->"                                { (\_ -> Arrow) }
-    "in"                              { (\_ -> In) }
+  "in"                                { (\_ -> In) }
   "."                                 { (\_ -> Dot) }
   ";"                                 { (\_ -> Divider) }
   "["                                 { (\_ -> TLSB )}
@@ -30,8 +30,8 @@ tokens :-
   "+"                                 { (\_ -> Plus) }
   "-"                                 { (\_ -> Minus) }
   "/"                                 { (\_ -> Divide) }
-  "("                                 { (\_ -> LeftParentheses)}
-  ")"                                 { (\_ -> LeftParentheses)}
+  "("                                 { (\_ -> LeftParentheses) }
+  ")"                                 { (\_ -> RightParentheses) }
   "let"                               { (\_ -> Let )}
   "="                                 { (\_ -> Equals )}
   $digit+                             { (\s -> Int $ read s) }

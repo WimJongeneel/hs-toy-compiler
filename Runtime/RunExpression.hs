@@ -176,10 +176,21 @@ runExpression EGCCollect        = do
 runExpression (EFunction pn b)  = do
   mem <- get
   let nk = nextHeapAdress mem
+  {- TODO: populate closure with referenced variables -}
   let f = HFunction Map.empty pn b
   let heap' = Map.insert nk f $ heap mem
   put $ Memory (stack mem) heap'
   return $ VPointer nk
+runExpression (ECall f a)       = do
+  fun <- runExpression f
+  arg <- runExpression a
+  case fun of
+    VPointer p -> do
+                  mem <- get 
+                  case Map.lookup p $ heap mem of Just (HFunction _ _ b) -> {- TODO: run in its scope -} runExpression b 
+                                                  _                      ->  error "invalid function call"
+    _          -> error "invalid function call"
+  
 
 
 runProgram :: AST -> State Memory Value
