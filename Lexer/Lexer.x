@@ -13,25 +13,26 @@ $alpha = [a-zA-Z]
 
 tokens :-
   $white+                             ;
-  "in"                                { (\s -> In) }
-  "."                                 { (\s -> Dot) }
-  ";"                                 { (\s -> Divider) }
-  "["                                 { (\s -> TLSB )}
-  "]"                                 { (\s -> TRSB )}
-  "true"                              { (\s -> TTrue) }
-  "false"                             { (\s -> TFalse) }
-  "if"                                { (\s -> If) }
-  "then"                              { (\s -> Then) }
-  "else"                              { (\s -> Else) }
-  "=="                                { (\s -> Compare) }
-  "<>"                                { (\s -> CompareNot ) }
-  "*"                                 { (\s -> Times) }
-  "+"                                 { (\s -> Plus) }
-  "-"                                 { (\s -> Minus) }
-  "/"                                 { (\s -> Divide) }
-  "("                                 { (\s -> LeftParentheses)}
-  ")"                                 { (\s -> LeftParentheses)}
-  "let"                               { (\s -> Let )}
-  "="                                 { (\s -> Equals )}
+  "->"                                { (\_ -> Arrow) }
+    "in"                              { (\_ -> In) }
+  "."                                 { (\_ -> Dot) }
+  ";"                                 { (\_ -> Divider) }
+  "["                                 { (\_ -> TLSB )}
+  "]"                                 { (\_ -> TRSB )}
+  "true"                              { (\_ -> TTrue) }
+  "false"                             { (\_ -> TFalse) }
+  "if"                                { (\_ -> If) }
+  "then"                              { (\_ -> Then) }
+  "else"                              { (\_ -> Else) }
+  "=="                                { (\_ -> Compare) }
+  "<>"                                { (\_ -> CompareNot ) }
+  "*"                                 { (\_ -> Times) }
+  "+"                                 { (\_ -> Plus) }
+  "-"                                 { (\_ -> Minus) }
+  "/"                                 { (\_ -> Divide) }
+  "("                                 { (\_ -> LeftParentheses)}
+  ")"                                 { (\_ -> LeftParentheses)}
+  "let"                               { (\_ -> Let )}
+  "="                                 { (\_ -> Equals )}
   $digit+                             { (\s -> Int $ read s) }
   $alpha+                             { (\s -> Id $ show s) }

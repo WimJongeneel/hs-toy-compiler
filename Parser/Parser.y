@@ -32,9 +32,10 @@ rsb       { TRSB }
 divider   { Divider }
 dot       { Dot }
 in        { In }
+arrow     { Arrow }
 
 %right eq comp compNot dot in
-%left plus minus
+%left plus minus arrow
 %left times divide
 %right if then else divider
 
@@ -44,6 +45,7 @@ AST : Expression AST                                        { $1:$2 }
     | {- empty -}                                           { [ ] }
 
 Expression: if Expression then Expression else Expression   { EIfElse $2 $4 $6 }
+  | id arrow Expression                                     { EFunction $1 $3 }
   | if Expression then Expression                           { EIf $2 $4 }
   | lsb ExpressionList rsb                                  { EArrayInit $2 }
   | Expression dot lsb Expression rsb                       { EIndex $1 $4 }

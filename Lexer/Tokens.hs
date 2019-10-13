@@ -22,4 +22,5 @@ data Token = Times
   | Divider
   | Dot
   | In
+  | Arrow
   deriving (Eq, Show)
