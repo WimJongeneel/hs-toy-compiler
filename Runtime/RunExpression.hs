@@ -1,4 +1,5 @@
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Runtime.RunExpression where
 
@@ -41,8 +42,8 @@ after (sm:coll) res = state $ \s -> let (b, s') = runState sm s in runState (aft
 after _ _           = state ([],)
 
 collectPointers :: [Value] -> Set.Set Int
-collectPointers vals = Set.fromList $ concatMap (\v -> case v of VPointer p -> [p] 
-                                                                 _          -> [ ]) vals
+collectPointers vals = Set.fromList $ concatMap (\case VPointer p -> [p] 
+                                                       _          -> [ ]) vals
 
 collectStackPointers :: Memory -> Set.Set Int
 collectStackPointers mem = let st = concatMap (\s -> let l = Map.toList s in fmap snd l) (stack mem)
@@ -61,6 +62,14 @@ markUnreachableHeapEntries mem = let stackPointers = collectStackPointers mem
                                      reachablePointers = expandPointers mem stackPointers
                                      heapAdresses = Map.keys (heap mem) 
                                  in Set.fromList $ heapAdresses \\ (Set.toList reachablePointers)
+
+gcCollect:: Memory -> Memory
+gcCollect mem = let 
+                unreachable = markUnreachableHeapEntries mem
+                h = heap mem
+                s = stack mem
+                in 
+                Memory s $ Map.filterWithKey (\k _ -> Set.member k unreachable) h
 
 runNumericBinaryExpression :: (Expression -> State Memory Value)
   -> Expression
@@ -116,7 +125,7 @@ runExpression (EAssign exprs) = do
                             m <- get
                             put $ Memory (insertVal (fst e) v $ stack m) (heap m)
                             return VUnit) exprs
-  _ <- (after inserts [])
+  _ <- after inserts []
   return VUnit
 runExpression (ERead id') = gets (readVal id' . stack)
 runExpression (EIf c e)       = do
@@ -140,7 +149,7 @@ runExpression (EArrayInit a)    = do
   let m' = Memory (stack m) heap'
   put m'
   return $ VPointer $ nk + 1
-runExpression (EIndex e i) = do
+runExpression (EIndex e i)      = do
   val <- runExpression e
   index <- runExpression i
   m <- get
@@ -150,11 +159,15 @@ runExpression (EIndex e i) = do
                                 Just (HArray a) -> return $ a !! i'
                                 _               -> error "invalid index expression"  
     _                     -> error "invalid index expression"
-runExpression (ELetIn defs e) = do
+runExpression (ELetIn defs e)   = do
   m <- get
   let (m', v) = doInScope runExpression m defs e
   put m'
   return v
+runExpression EGCCollect        = do
+  mem <- get 
+  put $ gcCollect mem
+  return VUnit
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)

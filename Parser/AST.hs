@@ -16,6 +16,7 @@ data Expression = EPlus Expression Expression
   | EArrayInit [Expression]
   | EIndex Expression Expression
   | ELetIn [(String, Expression)] Expression
+  | EGCCollect
   deriving (Eq, Show)
 
 type AST = [Expression]
