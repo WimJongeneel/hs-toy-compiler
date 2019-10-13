@@ -203,15 +203,17 @@ runExpression (EFunction pn b)  = do
   return $ VPointer nk
 runExpression (ECall f a)       = do
   fun <- runExpression f
-  arg <- runExpression a
+  -- arg <- runExpression a | not yet
   mem <- get 
   let (scope, body) = case fun of
                       VPointer p -> case Map.lookup p $ heap mem of 
                                       Just (HFunction s _ b) -> (s, b) 
                                       _                      ->  error "invalid function call"
                       _          -> error "invalid function call"
-  let (v, m) = let s = runExpression body in runState s (Memory [scope] (heap mem))
-  put m
+  let (v, mem') = let s = runExpression body in runState s (Memory [scope] (heap mem))
+  -- we want the updated heap from the function call (in case the function returned a complex type we need that heap entry)
+  -- but we don't whant the internal stack of the function
+  put $ Memory (stack mem) (heap mem')
   return v
 
 runProgram :: AST -> State Memory Value
