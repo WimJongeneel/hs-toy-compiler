@@ -1,10 +1,14 @@
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Runtime.RunExpression where
 
 import Control.Monad.State
 import Parser.AST
 import qualified Data.Map as Map
+import qualified Data.Set as Set
+import Data.List
+
 import Data.Maybe
 
 data Value = VInt Int
@@ -35,7 +39,37 @@ insertVal _ _ []              = error "no scopes in mem"
 after :: [State a b]  -> [b] -> State a [b]
 after [s1] res      = state $ \s -> let (b, s') = runState s1 s in (res ++ [b], s')
 after (sm:coll) res = state $ \s -> let (b, s') = runState sm s in runState (after coll $ res ++ [b]) s'
-after _ _           = error "no State monad provided for after"
+after _ _           = state ([],)
+
+collectPointers :: [Value] -> Set.Set Int
+collectPointers vals = Set.fromList $ concatMap (\case VPointer p -> [p] 
+                                                       _          -> [ ]) vals
+
+collectStackPointers :: Memory -> Set.Set Int
+collectStackPointers mem = let st = concatMap (\s -> let l = Map.toList s in fmap snd l) (stack mem)
+                           in collectPointers st
+
+expandPointers :: Memory -> Set.Set Int -> Set.Set Int
+expandPointers mem ps = let hp = heap mem
+                            psL = Set.toList ps
+                            ps' = concatMap (\p -> case Map.lookup p hp of 
+                                                   Just (HArray a)    -> p : let _ps = collectPointers a in Set.toList $ expandPointers mem _ps
+                                                   _                  -> [p]) psL
+                        in Set.fromList ps'
+
+markUnreachableHeapEntries :: Memory -> Set.Set Int
+markUnreachableHeapEntries mem = let stackPointers = collectStackPointers mem
+                                     reachablePointers = expandPointers mem stackPointers
+                                     heapAdresses = Map.keys (heap mem) 
+                                 in Set.fromList $ heapAdresses \\ (Set.toList reachablePointers)
+
+gcCollect:: Memory -> Memory
+gcCollect mem = let 
+                unreachable = markUnreachableHeapEntries mem
+                h = heap mem
+                s = stack mem
+                in 
+                Memory s $ Map.filterWithKey (\k _ -> Set.member k unreachable) h
 
 runNumericBinaryExpression :: (Expression -> State Memory Value)
   -> Expression
@@ -91,7 +125,7 @@ runExpression (EAssign exprs) = do
                             m <- get
                             put $ Memory (insertVal (fst e) v $ stack m) (heap m)
                             return VUnit) exprs
-  _ <- (after inserts [])
+  _ <- after inserts []
   return VUnit
 runExpression (ERead id') = gets (readVal id' . stack)
 runExpression (EIf c e)       = do
@@ -115,7 +149,7 @@ runExpression (EArrayInit a)    = do
   let m' = Memory (stack m) heap'
   put m'
   return $ VPointer $ nk + 1
-runExpression (EIndex e i) = do
+runExpression (EIndex e i)      = do
   val <- runExpression e
   index <- runExpression i
   m <- get
@@ -125,11 +159,15 @@ runExpression (EIndex e i) = do
                                 Just (HArray a) -> return $ a !! i'
                                 _               -> error "invalid index expression"  
     _                     -> error "invalid index expression"
-runExpression (ELetIn defs e) = do
+runExpression (ELetIn defs e)   = do
   m <- get
   let (m', v) = doInScope runExpression m defs e
   put m'
   return v
+runExpression EGCCollect        = do
+  mem <- get 
+  put $ gcCollect mem
+  return VUnit
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)
