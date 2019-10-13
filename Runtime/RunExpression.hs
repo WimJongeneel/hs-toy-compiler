@@ -117,6 +117,25 @@ doInScope run initalM scope expr =
   in
       (Memory (stack initalM) (heap m), last vs)
 
+getReferencedIdentifiers :: Expression -> [String]
+getReferencedIdentifiers (ERead i)          = [i]
+getReferencedIdentifiers (ENested e)        = getReferencedIdentifiers e
+getReferencedIdentifiers (ECompare l r)     = getReferencedIdentifiers l ++ getReferencedIdentifiers r
+getReferencedIdentifiers (EPlus l r)        = getReferencedIdentifiers l ++ getReferencedIdentifiers r
+getReferencedIdentifiers (EMinus l r)       = getReferencedIdentifiers l ++ getReferencedIdentifiers r
+getReferencedIdentifiers (EDivide l r)      = getReferencedIdentifiers l ++ getReferencedIdentifiers r
+getReferencedIdentifiers (ETimes l r)       = getReferencedIdentifiers l ++ getReferencedIdentifiers r
+getReferencedIdentifiers (ECompareNot l r)  = getReferencedIdentifiers l ++ getReferencedIdentifiers r
+getReferencedIdentifiers (EArrayInit es)    = concatMap getReferencedIdentifiers es
+getReferencedIdentifiers (EIndex e i)       = getReferencedIdentifiers e ++ getReferencedIdentifiers i
+getReferencedIdentifiers (ELetIn d e)       = let 
+                                              d' = concatMap (getReferencedIdentifiers . snd) d
+                                              e' = getReferencedIdentifiers e
+                                              in d' ++ e'
+getReferencedIdentifiers (EFunction _ b)    = getReferencedIdentifiers b
+getReferencedIdentifiers (ECall f p)        = getReferencedIdentifiers f ++ getReferencedIdentifiers p
+getReferencedIdentifiers _                  = []
+
 runExpression :: Expression -> State Memory Value
 runExpression (EInt i)        = state (VInt i,)
 runExpression (EBool b)       = state (VBool b,)
@@ -176,22 +195,24 @@ runExpression EGCCollect        = do
 runExpression (EFunction pn b)  = do
   mem <- get
   let nk = nextHeapAdress mem
-  {- TODO: populate closure with referenced variables -}
-  let f = HFunction Map.empty pn b
+  let c' = getReferencedIdentifiers b
+  let c'' = fmap (\i -> (i, readVal i (stack mem))) c'
+  let f = HFunction (Map.fromList c'') pn b
   let heap' = Map.insert nk f $ heap mem
   put $ Memory (stack mem) heap'
   return $ VPointer nk
 runExpression (ECall f a)       = do
   fun <- runExpression f
   arg <- runExpression a
-  case fun of
-    VPointer p -> do
-                  mem <- get 
-                  case Map.lookup p $ heap mem of Just (HFunction _ _ b) -> {- TODO: run in its scope -} runExpression b 
-                                                  _                      ->  error "invalid function call"
-    _          -> error "invalid function call"
-  
-
+  mem <- get 
+  let (scope, body) = case fun of
+                      VPointer p -> case Map.lookup p $ heap mem of 
+                                      Just (HFunction s _ b) -> (s, b) 
+                                      _                      ->  error "invalid function call"
+                      _          -> error "invalid function call"
+  let (v, m) = let s = runExpression body in runState s (Memory [scope] (heap mem))
+  put m
+  return v
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)

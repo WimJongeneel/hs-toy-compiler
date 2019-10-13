@@ -21,7 +21,8 @@ main = do
 
   -- let stdIn = "let x = 1"
 
-  let stdIn = "let f = a -> 1 + 1 \
+  let stdIn = " let x = 2\
+              \ let f = a -> x + 1 \
               \ f(1)"
   let tokens = alexScanTokens stdIn
   print tokens
