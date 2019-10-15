@@ -217,6 +217,7 @@ runExpression (ECall f a)       = do
   put $ Memory (stack mem) (heap mem')
   return v
 runExpression (EMatch val ps)   = do
+  -- TODO: follow pointer
   value <- runExpression val
   let pattern = find (\p -> case (p, value) of
                             ((PIntValue i1, _), VInt i2)    -> i1 == i2

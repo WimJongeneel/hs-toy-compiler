@@ -43,9 +43,9 @@ match 1 with
 | _   -> 0
 
 match [1;2] with
-| []      -> 1 --array list
+| []      -> 1 --empty array
 | [1]     -> 2 --array with 1 item: 1
-| [1; ..] -> 3 --array with n items, of which the first is ``
+| [1; ..] -> 3 --array with n items, of which the first is 1
 ```
 
 ## GC

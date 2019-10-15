@@ -39,6 +39,8 @@ pipe          { Pipe }
 tbool         { TBool }
 tint          { TInt }
 underscore    { Underscore }
+tunit         { TUnit }
+tfunc         { TFunc }
 
 %right eq comp compNot dot in arrow
 %left plus minus
@@ -88,6 +90,8 @@ Patern: tbool                                               { PBoolType }
   | true                                                    { PBoolValue True }
   | false                                                   { PBoolValue False }
   | underscore                                              { PNone }
+  | tunit                                                   { PUnitType }
+  | tfunc                                                   { PFuncType }
   | lsb PaternList rsb                                      { PArray False $2 }
   | lsb PaternList dot dot rsb                              { PArray True $2 }
 

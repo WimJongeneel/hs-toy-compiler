@@ -26,6 +26,8 @@ data Patern = PIntValue Int
   | PBoolValue Bool
   | PIntType
   | PBoolType
+  | PFuncType
+  | PUnitType
   | PArray Bool [Patern]
   | PNone
   deriving (Eq, Show)

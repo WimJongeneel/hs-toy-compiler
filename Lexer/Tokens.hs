@@ -28,5 +28,7 @@ data Token = Times
   | Pipe
   | TBool
   | TInt
+  | TFunc
+  | TUnit
   | Underscore
   deriving (Eq, Show)
