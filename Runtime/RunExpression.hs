@@ -143,7 +143,7 @@ runExpression (EPlus l r)     = runNumericBinaryExpression runExpression l (+) r
 runExpression (EMinus l r)    = runNumericBinaryExpression runExpression l (-) r
 runExpression (ETimes l r)    = runNumericBinaryExpression runExpression l (*) r
 runExpression (EDivide l r)   = runNumericBinaryExpression runExpression l div r
-runExpression (ENested e) = runExpression e
+runExpression (ENested e)     = runExpression e
 runExpression (EAssign exprs) = do
   let inserts = fmap (\e -> do 
                             v <- runExpression $ snd e
@@ -152,7 +152,7 @@ runExpression (EAssign exprs) = do
                             return VUnit) exprs
   _ <- after inserts []
   return VUnit
-runExpression (ERead id') = gets (readVal id' . stack)
+runExpression (ERead id')     = gets (readVal id' . stack)
 runExpression (EIf c e)       = do
   c' <- runExpression c
   case c' of

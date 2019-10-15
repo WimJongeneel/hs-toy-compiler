@@ -21,8 +21,9 @@ main = do
 
   -- let stdIn = "let x = 1"
 
-  let stdIn = "let f = let x = 2; y = 1 in z -> [[x;y;z]] \
-              \ let r = f(999)"
+  let stdIn = "let ff = x -> y -> [x;y] \
+              \ ff(6)(9)"
+
   let tokens = alexScanTokens stdIn
   print tokens
   let ast = parse tokens
