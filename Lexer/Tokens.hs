@@ -23,4 +23,10 @@ data Token = Times
   | Dot
   | In
   | Arrow
+  | Match
+  | With
+  | Pipe
+  | TBool
+  | TInt
+  | Underscore
   deriving (Eq, Show)

@@ -10,29 +10,35 @@ import qualified Lexer.Lexer as L
 %tokentype {Token}
 
 %token
-plus      { Plus }
-minus     { Minus }
-times     { Times }
-divide    { Divide }
-int       { Int $$ }
-lp        { LeftParentheses }
-rp        { RightParentheses }
-let       { Let }
-eq        { Equals }
-id        { Id $$ }
-then      { Then }
-if        { If }
-else      { Else }
-comp      { Compare }
-compNot   { CompareNot }
-true      { TTrue }
-false     { TFalse }
-lsb       { TLSB }
-rsb       { TRSB }
-divider   { Divider }
-dot       { Dot }
-in        { In }
-arrow     { Arrow }
+plus          { Plus }
+minus         { Minus }
+times         { Times }
+divide        { Divide }
+int           { Int $$ }
+lp            { LeftParentheses }
+rp            { RightParentheses }
+let           { Let }
+eq            { Equals }
+id            { Id $$ }
+then          { Then }
+if            { If }
+else          { Else }
+comp          { Compare }
+compNot       { CompareNot }
+true          { TTrue }
+false         { TFalse }
+lsb           { TLSB }
+rsb           { TRSB }
+divider       { Divider }
+dot           { Dot }
+in            { In }
+arrow         { Arrow }
+match         { Match }
+with          { With }
+pipe          { Pipe }
+tbool         { TBool }
+tint          { TInt }
+underscore    { Underscore }
 
 %right eq comp compNot dot in arrow
 %left plus minus
@@ -54,6 +60,7 @@ Expression: if Expression then Expression else Expression   { EIfElse $2 $4 $6 }
   | Expression divide Expression                            { EDivide $1 $3 }
   | let LetDeclarations in Expression                       { ELetIn $2 $4 }
   | let LetDeclarations                                     { EAssign $2 }
+  | match Expression with Paterns                           { EMatch $2 $4 }
   | Expression1                                             { $1 }
 
 Expression1 : Expression1 lp Expression rp                  { ECall $1 $3 }
@@ -71,6 +78,21 @@ ExpressionList: Expression divider ExpressionList           { $1:$3 }
 
 LetDeclarations: id eq Expression divider LetDeclarations   { ($1, $3):$5 }
   | id eq Expression                                        { [($1, $3)] }
+
+Paterns: pipe Patern arrow Expression Paterns               { ($2, $4):$5 }
+ | pipe Patern arrow Expression                             { [($2, $4)] }
+
+Patern: tbool                                               { PBoolType }
+  | tint                                                    { PIntType }
+  | int                                                     { PIntValue $1 }
+  | true                                                    { PBoolValue True }
+  | false                                                   { PBoolValue False }
+  | underscore                                              { PNone }
+  | lsb PaternList rsb                                      { PArray False $2 }
+  | lsb PaternList dot dot rsb                              { PArray True $2 }
+
+PaternList: Patern divider PaternList                       { $1:$3 }
+  | {- empty -}                                             { [] }
 
 {
 happyError :: [Token] -> a

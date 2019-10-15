@@ -21,8 +21,13 @@ main = do
 
   -- let stdIn = "let x = 1"
 
-  let stdIn = "let ff = x -> y -> [x;y] \
-              \ ff(6)(9)"
+  let stdIn = "match 1 + 1 with \
+              \| 1     -> 999 \
+              \| 2     -> 666 \
+              \| []    -> 777 \
+              \| [1; 2;..] -> 111111 \
+              \| [..]  -> 444 \
+              \| _     -> 000"
 
   let tokens = alexScanTokens stdIn
   print tokens

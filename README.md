@@ -32,6 +32,22 @@ let f = x -> 1 + 2
 let r = f(1)
 ```
 
+## Paternmatching
+
+Paterns can be described using values or types. For array a collection of paterns can be used which will be used at their respoective index. With `..` we can indicate that their could be more items in the array. `_` is used to match everything.
+
+```hs
+match 1 with
+| 2   -> 1
+| int -> 2
+| _   -> 0
+
+match [1;2] with
+| []      -> 1 --array list
+| [1]     -> 2 --array with 1 item: 1
+| [1; ..] -> 3 --array with n items, of which the first is ``
+```
+
 ## GC
 
 This language uses a `mark-and-sweep` based garbage collector. The GC will build a Set of heap adreses that are still reachable from the stack (both direct and indirect). All the heap entries that are not in this Set will be removed. GC calls are blocking.
