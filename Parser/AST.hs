@@ -17,6 +17,8 @@ data Expression = EPlus Expression Expression
   | EIndex Expression Expression
   | ELetIn [(String, Expression)] Expression
   | EGCCollect
+  | EFunction String Expression
+  | ECall Expression Expression
   deriving (Eq, Show)
 
 type AST = [Expression]

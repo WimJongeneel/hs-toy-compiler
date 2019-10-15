@@ -6,7 +6,7 @@ data Token = Times
   | Int Int
   | Divide
   | LeftParentheses
-  | RigthParentheses
+  | RightParentheses
   | Let
   | Equals
   | Id String
@@ -22,4 +22,5 @@ data Token = Times
   | Divider
   | Dot
   | In
+  | Arrow
   deriving (Eq, Show)

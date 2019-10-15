@@ -16,10 +16,14 @@ main = do
   -- let stdIn = "let ss = let x = 20; a = [1;2] in let x = x * 10 in x \
   --             \ let aa = [1;2;3]"
 
-  let stdIn = "let ss = let x = 20; a = [1;2; [3;4]] in let x = x * 10 in x \
-              \ let aa = [1;2;3;[0;0]]"
+  -- let stdIn = "let ss = let x = 20; a = [1;2; [3;4]] in let x = x * 10 in x \
+  --             \ let aa = [1;2;3;[0;0]]"
 
   -- let stdIn = "let x = 1"
+
+  let stdIn = "let ff = x -> y -> [x;y] \
+              \ ff(6)(9)"
+
   let tokens = alexScanTokens stdIn
   print tokens
   let ast = parse tokens
