@@ -216,6 +216,20 @@ runExpression (ECall f a)       = do
   -- but we don't whant the internal stack of the function
   put $ Memory (stack mem) (heap mem')
   return v
+runExpression (EMatch val ps)   = do
+  value <- runExpression val
+  let pattern = find (\p -> case (p, value) of
+                            ((PIntValue i1, _), VInt i2)    -> i1 == i2
+                            ((PBoolValue b1, _), VBool b2)  -> b1 == b2
+                            ((PIntType,_), VInt _)          -> True
+                            ((PBoolType,_), VBool _)        -> True
+                            ((PNone, _), _)                 -> True
+                            -- TODO: Array patterns
+                            _                               -> False
+                ) ps
+  case pattern of
+    Just (p, e)   -> runExpression e
+    _             -> return VUnit
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)
