@@ -77,41 +77,38 @@ gcCollect mem = let
                 in 
                 Memory s $ Map.filterWithKey (\k _ -> Set.member k unreachable) h
 
-runNumericBinaryExpression :: (Expression -> State Memory Value)
-  -> Expression
+runNumericBinaryExpression :: Expression
   -> (Int -> Int -> Int)
   -> Expression
   -> State Memory Value
-runNumericBinaryExpression run left opp rigth = do
-  v1 <- run left
-  r1 <- run rigth
+runNumericBinaryExpression left opp rigth = do
+  v1 <- runExpression left
+  r1 <- runExpression rigth
   let v = case (v1, r1) of 
            (VInt il, VInt ir)     -> il `opp` ir
            _                      -> error $ "invalid opperator (" ++ show v1 ++ ") (" ++ show r1 ++ ")"
   return $ VInt v
 
-runBoolBinaryExpression :: (Expression -> State Memory Value)
-  -> Expression
+runBoolBinaryExpression :: Expression
   -> (Value -> Value -> Bool)
   -> Expression
   -> State Memory Value
-runBoolBinaryExpression run left opp rigth = do
-  l1 <- run left
-  r1 <- run rigth
+runBoolBinaryExpression left opp rigth = do
+  l1 <- runExpression left
+  r1 <- runExpression rigth
   return $ VBool $ l1 `opp` r1
 
-doInScope:: (Expression -> State Memory Value)
-  -> Memory
+doInScope:: Memory
   -> [(String, Expression)]
   -> Expression
   -> (Memory, Value)
-doInScope run initalM scope expr = 
+doInScope initalM scope expr = 
   let inserts = fmap (\e -> do 
                             v <- runExpression $ snd e
                             m <- get
                             put $ Memory (insertVal (fst e) v $ stack m) (heap m)
                             return VUnit) scope;
-      statements = inserts ++ [run expr];
+      statements = inserts ++ [runExpression expr]
       sm = after statements [];
       (vs, m) = runState sm initalM;
   in
@@ -139,10 +136,10 @@ getReferencedIdentifiers _                  = []
 runExpression :: Expression -> State Memory Value
 runExpression (EInt i)        = state (VInt i,)
 runExpression (EBool b)       = state (VBool b,)
-runExpression (EPlus l r)     = runNumericBinaryExpression runExpression l (+) r
-runExpression (EMinus l r)    = runNumericBinaryExpression runExpression l (-) r
-runExpression (ETimes l r)    = runNumericBinaryExpression runExpression l (*) r
-runExpression (EDivide l r)   = runNumericBinaryExpression runExpression l div r
+runExpression (EPlus l r)     = runNumericBinaryExpression l (+) r
+runExpression (EMinus l r)    = runNumericBinaryExpression l (-) r
+runExpression (ETimes l r)    = runNumericBinaryExpression l (*) r
+runExpression (EDivide l r)   = runNumericBinaryExpression l div r
 runExpression (ENested e)     = runExpression e
 runExpression (EAssign exprs) = do
   let inserts = fmap (\e -> do 
@@ -163,8 +160,8 @@ runExpression (EIfElse c e1 e2) = do
   case c' of
     VBool b   -> runExpression $ if b then e1 else e2
     _         -> runExpression e2
-runExpression (ECompare l r) = runBoolBinaryExpression runExpression l (==) r
-runExpression (ECompareNot l r) = runBoolBinaryExpression runExpression l (/=) r
+runExpression (ECompare l r) = runBoolBinaryExpression l (==) r
+runExpression (ECompareNot l r) = runBoolBinaryExpression l (/=) r
 runExpression (EArrayInit a)    = do
   vals <- after (fmap runExpression a) []
   m <- get
@@ -186,7 +183,7 @@ runExpression (EIndex e i)      = do
     _                     -> error "invalid index expression"
 runExpression (ELetIn defs e)   = do
   m <- get
-  let (m', v) = doInScope runExpression m defs e
+  let (m', v) = doInScope m defs e
   put m'
   return v
 runExpression EGCCollect        = do
@@ -218,12 +215,11 @@ runExpression (ECall f a)       = do
   put $ Memory (stack mem) (heap mem')
   return v
 runExpression (EMatch val ps)   = do
-  -- TODO: follow pointer
   value <- runExpression val
   mem <- get
   let pattern = find (\pe -> patternMatches mem (fst pe) value) ps
   case pattern of
-    Just (p, e)   -> runExpression e
+    Just (_, e)   -> runExpression e
     _             -> return VUnit
 
 reducePointerToValue :: Memory -> Int -> Maybe HeapValue
@@ -241,11 +237,11 @@ patternMatches _ PBoolType (VBool _)          = True
 patternMatches _ PNone _                      = True
 patternMatches m pt (VPointer po)             = let val = reducePointerToValue m po 
                                                 in case (pt, val) of
-                                                    ((PArray _ []), (Just (HArray [])))      -> True
-                                                    ((PArray _ []), (Just (HArray _)))       -> False
-                                                    ((PArray o pts), (Just (HArray vs))) -> let pv = zip pts vs; lm = o || length pts == length vs
-                                                                                            in lm && all (\v -> patternMatches m (fst v) (snd v)) pv
-                                                    _                                       -> False
+                                                    ((PArray _ []), (Just (HArray [])))   -> True
+                                                    ((PArray _ []), (Just (HArray _)))    -> False
+                                                    ((PArray o pts), (Just (HArray vs)))  -> let pv = zip pts vs; lm = o || length pts == length vs
+                                                                                             in lm && all (\v -> patternMatches m (fst v) (snd v)) pv
+                                                    _                                     -> False
 patternMatches _ _ _                          = False
 
 runProgram :: AST -> State Memory Value
