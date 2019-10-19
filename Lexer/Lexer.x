@@ -14,6 +14,14 @@ $alpha = [a-zA-Z]
 tokens :-
   $white+                             ;
   "->"                                { (\_ -> Arrow) }
+  "()"                                { (\_ -> TUnit) }
+  "func"                              { (\_ -> TFunc) }
+  "|"                                 { (\_ -> Pipe) }
+  "match"                             { (\_ -> Match) }
+  "with"                              { (\_ -> With) }
+  "bool"                              { (\_ -> TBool) }
+  "int"                               { (\_ -> TInt) }
+  "_"                                 { (\_ -> Underscore) }
   "in"                                { (\_ -> In) }
   "."                                 { (\_ -> Dot) }
   ";"                                 { (\_ -> Divider) }

@@ -19,6 +19,17 @@ data Expression = EPlus Expression Expression
   | EGCCollect
   | EFunction String Expression
   | ECall Expression Expression
+  | EMatch Expression [(Patern, Expression)]
+  deriving (Eq, Show)
+
+data Patern = PIntValue Int
+  | PBoolValue Bool
+  | PIntType
+  | PBoolType
+  | PFuncType
+  | PUnitType
+  | PArray Bool [Patern]
+  | PNone
   deriving (Eq, Show)
 
 type AST = [Expression]
