@@ -68,6 +68,7 @@ Expression: if Expression then Expression else Expression   { EIfElse $2 $4 $6 }
 Expression1 : Expression1 lp Expression rp                  { ECall $1 $3 }
   | id arrow Expression                                     { EFunction $1 $3 }
   | lsb ExpressionList rsb                                  { EArrayInit $2 }
+  | lsb rsb                                                 { EArrayInit [] }
   | Expression1 dot lsb Expression rsb                      { EIndex $1 $4 }
   | true                                                    { EBool True }
   | false                                                   { EBool False }

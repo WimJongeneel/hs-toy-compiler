@@ -178,10 +178,11 @@ runExpression (EIndex e i)      = do
   index <- runExpression i
   m <- get
   case (val, index) of
+    -- TODO: recursive lookup incase a pointer points to a pointer (can this happen?)
     (VPointer p, VInt i') -> let cv = Map.lookup p $ heap m 
                              in case cv of 
                                 Just (HArray a) -> return $ a !! i'
-                                _               -> error "invalid index expression"  
+                                _               -> error "invalid index expression"
     _                     -> error "invalid index expression"
 runExpression (ELetIn defs e)   = do
   m <- get
@@ -219,18 +220,33 @@ runExpression (ECall f a)       = do
 runExpression (EMatch val ps)   = do
   -- TODO: follow pointer
   value <- runExpression val
-  let pattern = find (\p -> case (p, value) of
-                            ((PIntValue i1, _), VInt i2)    -> i1 == i2
-                            ((PBoolValue b1, _), VBool b2)  -> b1 == b2
-                            ((PIntType,_), VInt _)          -> True
-                            ((PBoolType,_), VBool _)        -> True
-                            ((PNone, _), _)                 -> True
-                            -- TODO: Array patterns
-                            _                               -> False
-                ) ps
+  mem <- get
+  let pattern = find (\pe -> patternMatches mem (fst pe) value) ps
   case pattern of
     Just (p, e)   -> runExpression e
     _             -> return VUnit
+
+reducePointerToValue :: Memory -> Int -> Maybe HeapValue
+reducePointerToValue mem p = let v = Map.lookup p $ heap mem in case v of 
+                                                                Just (HArray _) -> v
+                                                                _               -> Nothing
+
+patternMatches :: Memory -> Patern -> Value -> Bool
+patternMatches _ (PIntValue i1) (VInt i2)     = i1 == i2
+patternMatches _ (PIntValue _) _              = False
+patternMatches _ (PBoolValue b1) (VBool b2)   = b1 == b2
+patternMatches _ (PBoolValue _) _             = False
+patternMatches _ PIntType (VInt _)            = True
+patternMatches _ PBoolType (VBool _)          = True
+patternMatches _ PNone _                      = True
+patternMatches m pt (VPointer po)             = let val = reducePointerToValue m po 
+                                                in case (pt, val) of
+                                                    ((PArray _ []), (Just (HArray [])))      -> True
+                                                    ((PArray _ []), (Just (HArray _)))       -> False
+                                                    ((PArray o pts), (Just (HArray vs))) -> let pv = zip pts vs; lm = o || length pts == length vs
+                                                                                            in lm && all (\v -> patternMatches m (fst v) (snd v)) pv
+                                                    _                                       -> False
+patternMatches _ _ _                          = False
 
 runProgram :: AST -> State Memory Value
 runProgram []      = state (VUnit,)
