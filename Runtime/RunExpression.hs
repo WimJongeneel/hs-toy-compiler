@@ -19,7 +19,7 @@ data Value = VInt Int
   deriving (Eq, Show)
 
 data HeapValue = HArray [Value]
-  -- | HObject [Map.Map String Value]
+  | HObject (Map.Map String Value)
   | HFunction { closure :: Map.Map String Value, param :: String, body :: Expression }
   deriving (Eq, Show)
 
@@ -246,6 +246,16 @@ runExpression (EMatch val ps)   = do
   case pattern of
     Just (_, e)   -> runExpression e
     _             -> return VUnit
+runExpression (EObject props)   = do
+  vals <- after (fmap (runExpression . snd) props) []
+  let propnames = fmap fst props
+  let props' = Map.fromList $ zip propnames vals
+  m <- get
+  let nk = nextHeapAdress m
+  let heap' = Map.insert nk (HObject props') (heap m)
+  let m' = Memory (stack m) heap'
+  put m'
+  return $ VPointer nk
 
 reducePointerToValue :: Memory -> Int -> Maybe HeapValue
 reducePointerToValue mem p = let v = Map.lookup p $ heap mem in case v of 

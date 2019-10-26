@@ -42,6 +42,9 @@ underscore    { Underscore }
 tunit         { TUnit }
 tfunc         { TFunc }
 comma         { Comma }
+lbr           { LeftBracket }
+rbr           { RightBracket }
+colon         { Colon }
 
 %right eq comp compNot dot in arrow
 %left plus minus
@@ -71,11 +74,16 @@ Expression1 : Expression1 lp Expression rp                          { ECall $1 $
   | lsb ExpressionListDivider rsb                                   { EArrayInit $2 }
   | lsb rsb                                                         { EArrayInit [] }
   | Expression1 dot lsb Expression rsb                              { EIndex $1 $4 }
+  | lbr rbr                                                         { EObject [] }
+  | lbr PropertyList rbr                                            { EObject $2 }
   | true                                                            { EBool True }
   | false                                                           { EBool False }
   | int                                                             { EInt $1 }
   | lp ExpressionListComma rp                                       { if length $2 == 1 then ENested ($2 !! 0) else ETuple $2 }
   | id                                                              { ERead $1 }
+
+PropertyList: id colon Expression divider PropertyList              { ($1, $3):$5 }
+  | id colon Expression                                             { [($1, $3)] }
 
 ExpressionListDivider: Expression divider ExpressionListDivider     { $1:$3 }
   | Expression                                                      { [$1] }
