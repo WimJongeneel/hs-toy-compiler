@@ -205,6 +205,7 @@ runExpression (EIndex e i)      = do
                              in case cv of 
                                 Just (HArray a) -> return $ a !! i'
                                 _               -> error "invalid index expression"
+
     _                     -> error "invalid index expression"
 runExpression (ELetIn defs e)   = do
   m <- get
@@ -256,7 +257,17 @@ runExpression (EObject props)   = do
   let m' = Memory (stack m) heap'
   put m'
   return $ VPointer nk
+runExpression (EObjectIndex e i) = do
+  val <- runExpression e
+  m <- get
+  case val of
+    -- TODO: recursive lookup incase a pointer points to a pointer (can this happen?)
+    VPointer p -> let cv = Map.lookup p $ heap m 
+                  in case cv of 
+                     Just (HObject p) -> fromMaybe (return VUnit) (fmap return (Map.lookup i p))
+                     _                -> error "invalid index expression"
 
+    _                     -> error "invalid index expression"
 reducePointerToValue :: Memory -> Int -> Maybe HeapValue
 reducePointerToValue mem p = let v = Map.lookup p $ heap mem in case v of 
                                                                 Just (HArray _) -> v

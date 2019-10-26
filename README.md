@@ -73,6 +73,15 @@ let (x, y) = (1, 2)
 let [x, y] = [1; 2]
 ```
 
+## Objects
+
+Objects are created by listing the property initializers between `{` and `}`, seperated with `;`. A property initialized exists out of `[ID]: [EXPRESSION]`. Properties of an object can be recived by using the `.` as indexer. 
+
+```hs
+let o = { x: 1; y: true }
+let z = o.x
+``
+
 Note that a single item tupples doesn't exist. Placing an expresion between parentheses will create a nested expresion and not a tuple.
 
 ## GC

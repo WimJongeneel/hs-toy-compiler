@@ -22,6 +22,7 @@ data Expression = EPlus Expression Expression
   | ECall Expression Expression
   | EMatch Expression [(Patern, Expression)]
   | EObject [(String, Expression)]
+  | EObjectIndex Expression String
   deriving (Eq, Show)
 
 data DeclarePatern = DPSingleId String

@@ -74,6 +74,7 @@ Expression1 : Expression1 lp Expression rp                          { ECall $1 $
   | lsb ExpressionListDivider rsb                                   { EArrayInit $2 }
   | lsb rsb                                                         { EArrayInit [] }
   | Expression1 dot lsb Expression rsb                              { EIndex $1 $4 }
+  | Expression1 dot id                                              { EObjectIndex $1 $3 }
   | lbr rbr                                                         { EObject [] }
   | lbr PropertyList rbr                                            { EObject $2 }
   | true                                                            { EBool True }
