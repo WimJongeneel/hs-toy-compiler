@@ -6,7 +6,8 @@ data Expression = EPlus Expression Expression
   | EDivide Expression Expression
   | EInt Int
   | ENested Expression
-  | EAssign [(String, Expression)]
+  | ETuple [Expression]
+  | EAssign [(DeclarePatern, Expression)]
   | ERead String
   | EIf Expression Expression
   | EIfElse Expression Expression Expression
@@ -15,11 +16,16 @@ data Expression = EPlus Expression Expression
   | EBool Bool
   | EArrayInit [Expression]
   | EIndex Expression Expression
-  | ELetIn [(String, Expression)] Expression
+  | ELetIn [(DeclarePatern, Expression)] Expression
   | EGCCollect
   | EFunction String Expression
   | ECall Expression Expression
   | EMatch Expression [(Patern, Expression)]
+  deriving (Eq, Show)
+
+data DeclarePatern = DPSingleId String
+  | DPDescructTuple [String]
+  | DPDescructArray [String]
   deriving (Eq, Show)
 
 data Patern = PIntValue Int

@@ -15,6 +15,7 @@ data Value = VInt Int
   | VUnit
   | VBool Bool
   | VPointer Int
+  | VTuple [Value]
   deriving (Eq, Show)
 
 data HeapValue = HArray [Value]
@@ -37,6 +38,11 @@ insertVal :: String -> Value -> [Map.Map String Value] -> [Map.Map String Value]
 insertVal id' val (scope:mem) = let scope' = Map.insert id' val scope in scope' : mem
 insertVal _ _ []              = error "no scopes in mem"
 
+insertVals :: [(String, Value)] -> [Map.Map String Value] -> [Map.Map String Value]
+insertVals vals (scope : mem) =
+  let scope' = Map.union scope (Map.fromList vals) in scope' : mem
+insertVals _ [] = error "no scopes in mem"
+
 nextHeapAdress :: Memory -> Int
 nextHeapAdress mem = let ks = Map.keys $ heap mem
                      in case ks of [] -> 0 
@@ -49,6 +55,7 @@ after _ _           = state ([],)
 
 collectPointers :: [Value] -> Set.Set Int
 collectPointers vals = Set.fromList $ concatMap (\case VPointer p -> [p] 
+                                                       VTuple vs  -> let set = collectPointers vs in Set.toList set
                                                        _          -> [ ]) vals
 
 collectStackPointers :: Memory -> Set.Set Int
@@ -99,14 +106,21 @@ runBoolBinaryExpression left opp rigth = do
   return $ VBool $ l1 `opp` r1
 
 doInScope:: Memory
-  -> [(String, Expression)]
+  -> [(DeclarePatern, Expression)]
   -> Expression
   -> (Memory, Value)
 doInScope initalM scope expr = 
   let inserts = fmap (\e -> do 
                             v <- runExpression $ snd e
                             m <- get
-                            put $ Memory (insertVal (fst e) v $ stack m) (heap m)
+                            let newEnties =
+                                 case fst e of
+                                 DPSingleId i      -> [(i, v)]
+                                 DPDescructTuple i -> case v of 
+                                                      VTuple vs -> zip i vs
+                                                      _         -> []
+                                 _                 -> []
+                            put $ Memory (insertVals newEnties (stack m)) (heap m)
                             return VUnit) scope;
       statements = inserts ++ [runExpression expr]
       sm = after statements [];
@@ -131,11 +145,15 @@ getReferencedIdentifiers (ELetIn d e)       = let
                                               in d' ++ e'
 getReferencedIdentifiers (EFunction _ b)    = getReferencedIdentifiers b
 getReferencedIdentifiers (ECall f p)        = getReferencedIdentifiers f ++ getReferencedIdentifiers p
+getReferencedIdentifiers (ETuple vals)      = concatMap getReferencedIdentifiers vals
 getReferencedIdentifiers _                  = []
 
 runExpression :: Expression -> State Memory Value
 runExpression (EInt i)        = state (VInt i,)
 runExpression (EBool b)       = state (VBool b,)
+runExpression (ETuple exprs)  = do
+  vals <- after (fmap runExpression exprs) []
+  return $ VTuple vals
 runExpression (EPlus l r)     = runNumericBinaryExpression l (+) r
 runExpression (EMinus l r)    = runNumericBinaryExpression l (-) r
 runExpression (ETimes l r)    = runNumericBinaryExpression l (*) r
@@ -145,7 +163,14 @@ runExpression (EAssign exprs) = do
   let inserts = fmap (\e -> do 
                             v <- runExpression $ snd e
                             m <- get
-                            put $ Memory (insertVal (fst e) v $ stack m) (heap m)
+                            let newEnties =
+                                 case fst e of
+                                 DPSingleId i      -> [(i, v)]
+                                 DPDescructTuple i -> case v of 
+                                                      VTuple vs -> zip i vs
+                                                      _         -> []
+                                 _                 -> []
+                            put $ Memory (insertVals newEnties (stack m)) (heap m)
                             return VUnit) exprs
   _ <- after inserts []
   return VUnit

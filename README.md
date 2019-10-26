@@ -48,6 +48,26 @@ match [1;2] with
 | [1; ..] -> 3 --array with n items, of which the first is 1
 ```
 
+## Tuples
+
+Tuples are created by listing expresion within `(` and `)`, seperated by `,`;
+
+```hs
+let t = (1, 3*2)
+let tt = (x -> x * 2, true, (1,2,3), [2,3,4])
+```
+
+## Descruction
+
+Both tuples and arrays can be destructed. When a array or tupple get descructed the items inside will be assigned to the listed identifiers, respecting the insertion order. For descructing tuples `(` and `)` are used, for descructing arrays `[` and `]` are used. The identifiers are seperated by `,`
+
+```hs
+let (x, y) = (1, 2)
+let [x, y] = [1; 2]
+```
+
+Note that a single item tupples doesn't exist. Placing an expresion between parentheses will create a nested expresion and not a tuple.
+
 ## GC
 
 This language uses a `mark-and-sweep` based garbage collector. The GC will build a Set of heap adreses that are still reachable from the stack (both direct and indirect). All the heap entries that are not in this Set will be removed. GC calls are blocking.

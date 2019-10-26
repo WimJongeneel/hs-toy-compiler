@@ -14,6 +14,7 @@ $alpha = [a-zA-Z]
 tokens :-
   $white+                             ;
   "->"                                { (\_ -> Arrow) }
+  ","                                 { (\_ -> Comma) }
   "()"                                { (\_ -> TUnit) }
   "func"                              { (\_ -> TFunc) }
   "|"                                 { (\_ -> Pipe) }
