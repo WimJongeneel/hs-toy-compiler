@@ -67,6 +67,7 @@ expandPointers mem ps = let hp = heap mem
                             psL = Set.toList ps
                             ps' = concatMap (\p -> case Map.lookup p hp of 
                                                    Just (HArray a)    -> p : let _ps = collectPointers a in Set.toList $ expandPointers mem _ps
+                                                   Just (HObject a)   -> p : let _ps = collectPointers (fmap snd (Map.toList a)) in Set.toList $ expandPointers mem _ps
                                                    _                  -> [p]) psL
                         in Set.fromList ps'
 
