@@ -31,4 +31,5 @@ data Token = Times
   | TFunc
   | TUnit
   | Underscore
+  | Comma
   deriving (Eq, Show)
