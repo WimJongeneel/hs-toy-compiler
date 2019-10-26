@@ -13,6 +13,9 @@ $alpha = [a-zA-Z]
 
 tokens :-
   $white+                             ;
+  ":"                                 { (\_ -> Colon) }
+  "{"                                 { (\_ -> LeftBracket) }
+  "}"                                 { (\_ -> RightBracket) }
   "->"                                { (\_ -> Arrow) }
   ","                                 { (\_ -> Comma) }
   "()"                                { (\_ -> TUnit) }

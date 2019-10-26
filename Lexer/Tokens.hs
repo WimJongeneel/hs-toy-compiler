@@ -32,4 +32,7 @@ data Token = Times
   | TUnit
   | Underscore
   | Comma
+  | LeftBracket
+  | RightBracket
+  | Colon
   deriving (Eq, Show)
