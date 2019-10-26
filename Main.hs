@@ -36,7 +36,9 @@ main = do
   --            \ let (o, p) = f(1)"
 
   let stdIn = "let x = { x: 1; w: 2 }\ 
-              \let t ={}"
+              \let t ={}\
+              \let xx = [1;2]\
+              \xx.[1]"
   
   let tokens = alexScanTokens stdIn
   print tokens
