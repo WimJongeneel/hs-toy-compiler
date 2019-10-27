@@ -21,24 +21,24 @@ main = do
 
   -- let stdIn = "let x = 1"
 
-  -- let stdIn = "match [1;2;3] with \
-  --             \| 1     -> 999 \
-  --             \| 2     -> 666 \
-  --             \| []    -> 777 \
-  --             \| [1; 2; ] -> 111111 \
-  --             \| [1; 2; .. ] -> 222222 \
-  --             \| [..]  -> 444 \
-  --             \| _     -> 000"
+  let stdIn = "match [true; false] with \
+              \| 1     -> 999 \
+              \| 2     -> 666 \
+              \| []    -> 777 \
+              \| [1; 2; ] -> 111111 \
+              \| [1; 2; .. ] -> 222222 \
+              \| [..]  -> 444 \
+              \| _     -> 000"
 
   -- let stdIn = "let tt = (1, 2, 3, 4, 5)\
   --            \ let (q, w, e) = tt\
   --            \ let f = x -> let x = x * 2; xx = x * 3 in (x, xx)\
   --            \ let (o, p) = f(1)"
 
-  let stdIn = "let x = { x: 1; w: 2 }\ 
-              \let t ={}\
-              \let xx = [1;2]\
-              \xx.[1]"
+  -- let stdIn = "let x = { x: 1; w: 2 }\ 
+  --             \let t ={}\
+  --             \let xx = [1;2]\
+  --             \xx.[1]"
   
   let tokens = alexScanTokens stdIn
   print tokens

@@ -285,6 +285,7 @@ patternMatches _ PNone _                      = True
 patternMatches m pt (VPointer po)             = let val = reducePointerToValue m po 
                                                 in case (pt, val) of
                                                     ((PArray _ []), (Just (HArray [])))   -> True
+                                                    ((PArray True []), (Just (HArray _))) -> True
                                                     ((PArray _ []), (Just (HArray _)))    -> False
                                                     ((PArray o pts), (Just (HArray vs)))  -> let pv = zip pts vs; lm = o || length pts == length vs
                                                                                              in lm && all (\v -> patternMatches m (fst v) (snd v)) pv
