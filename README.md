@@ -42,6 +42,13 @@ match 1 with
 | int -> 2
 | _   -> 0
 
+match x with
+| int  -> 0 --when x is an int
+| bool -> 1 --when x is a bool
+| func -> 2 --when x is a function
+| ()   -> 3 --when x is unit
+| [..] -> 4 --when x is an array
+
 match [1;2] with
 | []      -> 1 --empty array
 | [1]     -> 2 --array with 1 item: 1
