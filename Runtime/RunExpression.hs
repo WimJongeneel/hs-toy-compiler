@@ -19,16 +19,40 @@ data Value = VInt Int
   deriving (Eq, Show)
 
 data HeapValue = HArray [Value]
-  | HObject (Map.Map String Value)
+  | HObject { fromClass :: Maybe String, properties :: Map.Map String Value }
   | HFunction { closure :: Map.Map String Value, param :: String, body :: Expression }
   deriving (Eq, Show)
 
 data Memory = Memory { stack :: [Map.Map String Value]
   , heap :: Map.Map Int HeapValue
+  , classes :: Map.Map String Class
 } deriving Show
 
+-- constucting class:
+--  -execute memeber initializers, but them on object named `this`. Only allow primitives.
+--  -execute constructor, with `this` and global stack in scope
+--  -extract `this` from the resulting memery state and use this as the object
+
+-- index opperator on object
+-- -look to instance properties
+-- -
+
+data ClassContructor = ClassContructor { constructorParam :: String
+  , constructorBody :: [Expression] 
+} deriving (Eq, Show)
+
+data ClassMember = ClassMember { memeberParam :: String
+  , memberBody :: [Expression]
+} deriving (Eq, Show)
+
+data Class = Class { name :: String
+  , constructor :: ClassContructor
+  , members :: Map.Map String ClassMember
+  , instanceMembers :: Map.Map String Value
+} deriving (Eq, Show)
+
 emptyMemory :: Memory
-emptyMemory = Memory [Map.empty] Map.empty
+emptyMemory = Memory [Map.empty] Map.empty Map.empty
 
 readVal :: String -> [Map.Map String Value] -> Value
 readVal id' (scope : mem) = fromMaybe (readVal id' mem) (Map.lookup id' scope)
@@ -67,7 +91,7 @@ expandPointers mem ps = let hp = heap mem
                             psL = Set.toList ps
                             ps' = concatMap (\p -> case Map.lookup p hp of 
                                                    Just (HArray a)    -> p : let _ps = collectPointers a in Set.toList $ expandPointers mem _ps
-                                                   Just (HObject a)   -> p : let _ps = collectPointers (fmap snd (Map.toList a)) in Set.toList $ expandPointers mem _ps
+                                                   Just (HObject _ a) -> p : let _ps = collectPointers (fmap snd (Map.toList a)) in Set.toList $ expandPointers mem _ps
                                                    _                  -> [p]) psL
                         in Set.fromList ps'
 
@@ -83,7 +107,7 @@ gcCollect mem = let
                 h = heap mem
                 s = stack mem
                 in 
-                Memory s $ Map.filterWithKey (\k _ -> Set.member k unreachable) h
+                Memory s (Map.filterWithKey (\k _ -> Set.member k unreachable) h) (classes mem)
 
 runNumericBinaryExpression :: Expression
   -> (Int -> Int -> Int)
@@ -121,13 +145,13 @@ doInScope initalM scope expr =
                                                       VTuple vs -> zip i vs
                                                       _         -> []
                                  _                 -> []
-                            put $ Memory (insertVals newEnties (stack m)) (heap m)
+                            put $ Memory (insertVals newEnties (stack m)) (heap m) (classes m)
                             return VUnit) scope;
       statements = inserts ++ [runExpression expr]
       sm = after statements [];
       (vs, m) = runState sm initalM;
   in
-      (Memory (stack initalM) (heap m), last vs)
+      (Memory (stack initalM) (heap m)  (classes m), last vs)
 
 getReferencedIdentifiers :: Expression -> [String]
 getReferencedIdentifiers (ERead i)          = [i]
@@ -171,7 +195,7 @@ runExpression (EAssign exprs) = do
                                                       VTuple vs -> zip i vs
                                                       _         -> []
                                  _                 -> []
-                            put $ Memory (insertVals newEnties (stack m)) (heap m)
+                            put $ Memory (insertVals newEnties (stack m)) (heap m) (classes m)
                             return VUnit) exprs
   _ <- after inserts []
   return VUnit
@@ -193,7 +217,7 @@ runExpression (EArrayInit a)    = do
   m <- get
   let nk = nextHeapAdress m
   let heap' = Map.insert nk (HArray vals) (heap m)
-  let m' = Memory (stack m) heap'
+  let m' = Memory (stack m) heap' (classes m)
   put m'
   return $ VPointer nk
 runExpression (EIndex e i)      = do
@@ -224,7 +248,7 @@ runExpression (EFunction pn b)  = do
   let c'' = fmap (\i -> (i, readVal i (stack mem))) c'
   let f = HFunction (Map.fromList c'') pn b
   let heap' = Map.insert nk f $ heap mem
-  put $ Memory (stack mem) heap'
+  put $ Memory (stack mem) heap' (classes mem)
   return $ VPointer nk
 runExpression (ECall f a)       = do
   fun <- runExpression f
@@ -236,10 +260,10 @@ runExpression (ECall f a)       = do
                                              _                      ->  error "invalid function call"
                               _          -> error "invalid function call"
   let scope' = Map.insert pId arg scope
-  let (v, mem') = let s = runExpression body in runState s (Memory [scope'] (heap mem))
+  let (v, mem') = let s = runExpression body in runState s (Memory [scope'] (heap mem) (classes mem))
   -- we want the updated heap from the function call (in case the function returned a complex type we need that heap entry)
   -- but we don't whant the internal stack of the function
-  put $ Memory (stack mem) (heap mem')
+  put $ Memory (stack mem) (heap mem') (classes mem)
   return v
 runExpression (EMatch val ps)   = do
   value <- runExpression val
@@ -254,8 +278,8 @@ runExpression (EObject props)   = do
   let props' = Map.fromList $ zip propnames vals
   m <- get
   let nk = nextHeapAdress m
-  let heap' = Map.insert nk (HObject props') (heap m)
-  let m' = Memory (stack m) heap'
+  let heap' = Map.insert nk (HObject Nothing props') (heap m)
+  let m' = Memory (stack m) heap' (classes m)
   put m'
   return $ VPointer nk
 runExpression (EObjectIndex e i) = do
@@ -265,8 +289,8 @@ runExpression (EObjectIndex e i) = do
     -- TODO: recursive lookup incase a pointer points to a pointer (can this happen?)
     VPointer p -> let cv = Map.lookup p $ heap m 
                   in case cv of 
-                     Just (HObject p) -> fromMaybe (return VUnit) (fmap return (Map.lookup i p))
-                     _                -> error "invalid index expression"
+                     Just (HObject _ p) -> fromMaybe (return VUnit) (fmap return (Map.lookup i p))
+                     _                  -> error "invalid index expression"
 
     _                     -> error "invalid index expression"
 reducePointerToValue :: Memory -> Int -> Maybe HeapValue
