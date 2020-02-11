@@ -47,4 +47,4 @@ tokens :-
   "let"                               { (\_ -> Let )}
   "="                                 { (\_ -> Equals )}
   $digit+                             { (\s -> Int $ read s) }
-  $alpha+                             { (\s -> Id $ show s) }
+  $alpha+                             { (\s -> Id $ s) }
